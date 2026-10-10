@@ -85,9 +85,11 @@ docker-compose up --build -d
 We publish a Docker image with the Excalidraw client at [excalidraw/excalidraw](https://hub.docker.com/r/excalidraw/excalidraw). You can use it to self-host your own client under your own domain, on Kubernetes, AWS ECS, etc.
 
 ```bash
-docker build -t excalidraw/excalidraw .
-docker run --rm -dit --name excalidraw -p 5000:80 excalidraw/excalidraw:latest
+docker build -t excalidraw-arm64 .
+docker run -d --name excalidraw --restart unless-stopped -p 3000:80 excalidraw-arm64
 ```
+
+The same two commands work on x86-64 and on 64-bit ARM hosts such as a Raspberry Pi or an Apple Silicon Mac. See the [README](https://github.com/akshat-ideas/excalidraw-arm64#self-hosting-on-arm-raspberry-pi-apple-silicon) for requirements, updating, and 32-bit ARM.
 
 The Docker image is free of analytics and other tracking libraries.
 

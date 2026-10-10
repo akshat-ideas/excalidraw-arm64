@@ -49,6 +49,68 @@
   </figure>
 </div>
 
+## Self-hosting on ARM (Raspberry Pi, Apple Silicon)
+
+This fork tracks [excalidraw/excalidraw](https://github.com/excalidraw/excalidraw) and adds what is needed to build and run the Excalidraw client on ARM hosts such as a Raspberry Pi 5 or an Apple Silicon Mac. The application source is unchanged.
+
+### Requirements
+
+- A 64-bit OS. `uname -m` should print `aarch64` or `arm64`.
+- Docker 23 or newer. The `Dockerfile` needs BuildKit, which is the default from Docker 23 on. On older versions, prefix the build command with `DOCKER_BUILDKIT=1`.
+- About 4 GB of free memory for the build. In testing it was killed at 3 GB and succeeded at 4 GB. An 8 GB Raspberry Pi 5 or any Apple Silicon Mac is fine. On a 4 GB board add swap first, and on a 2 GB board [build on another machine](#build-on-another-machine). Running the finished image needs very little memory.
+
+### Build and run
+
+```bash
+git clone --depth 1 https://github.com/akshat-ideas/excalidraw-arm64.git
+cd excalidraw-arm64
+docker build -t excalidraw-arm64 .
+docker run -d --name excalidraw --restart unless-stopped -p 3000:80 excalidraw-arm64
+```
+
+Open `http://localhost:3000`, or `http://<host-ip>:3000` from another machine. To use a different port, change the first number in `-p 3000:80`. The container starts again by itself after a reboot.
+
+### Update
+
+Sync the fork with upstream on GitHub first, then:
+
+```bash
+git pull
+docker build -t excalidraw-arm64 .
+docker rm -f excalidraw
+docker run -d --name excalidraw --restart unless-stopped -p 3000:80 excalidraw-arm64
+```
+
+Drawings are saved in the browser, not in the container, so replacing the container does not remove them.
+
+### Build on another machine
+
+Use this when the target has too little memory to build, or runs a 32-bit OS (the Node.js build image has no 32-bit ARM variant). On any machine with Docker:
+
+```bash
+docker buildx build --platform linux/arm64 -t excalidraw-arm64 --load .
+docker save excalidraw-arm64 | gzip > excalidraw-arm64.tar.gz
+```
+
+For a 32-bit Raspberry Pi OS use `--platform linux/arm/v7` instead. Copy the file to the target, then:
+
+```bash
+docker load -i excalidraw-arm64.tar.gz
+docker run -d --name excalidraw --restart unless-stopped -p 3000:80 excalidraw-arm64
+```
+
+### Prebuilt image
+
+The [Publish Docker (GHCR)](.github/workflows/publish-ghcr.yml) workflow builds the image for `amd64`, `arm64` and `arm/v7` and pushes it to `ghcr.io/akshat-ideas/excalidraw-arm64` on every push to `master`. GitHub keeps workflows disabled on a fork until they are enabled in the repository's Actions tab. Once the workflow has run:
+
+```bash
+docker run -d --name excalidraw --restart unless-stopped -p 3000:80 ghcr.io/akshat-ideas/excalidraw-arm64:latest
+```
+
+### Limitations
+
+The image contains only the client. Shareable links and live collaboration still use the services hosted by Excalidraw, as configured in `.env.production`.
+
 ## Features
 
 The Excalidraw editor (npm package) supports:
